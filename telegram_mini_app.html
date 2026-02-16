@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Seruleb - Розыгрыш</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 100%;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            color: white;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .gift-icon {
+            font-size: 60px;
+            margin-bottom: 15px;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .info-card {
+            background: var(--tg-theme-secondary-bg-color, #f0f0f0);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .info-card h2 {
+            font-size: 20px;
+            margin-bottom: 15px;
+            color: var(--tg-theme-text-color, #000);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .info-card p, .info-card li {
+            font-size: 15px;
+            line-height: 1.6;
+            color: var(--tg-theme-text-color, #000);
+            margin-bottom: 10px;
+        }
+
+        .steps {
+            list-style: none;
+            counter-reset: step-counter;
+        }
+
+        .steps li {
+            position: relative;
+            padding-left: 45px;
+            margin-bottom: 20px;
+            counter-increment: step-counter;
+        }
+
+        .steps li:before {
+            content: counter(step-counter);
+            position: absolute;
+            left: 0;
+            top: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .button-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 15px 20px;
+            background: var(--tg-theme-bg-color, #ffffff);
+            border-top: 1px solid var(--tg-theme-hint-color, #e0e0e0);
+            box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .join-button {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .join-button:active {
+            transform: scale(0.98);
+        }
+
+        .join-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .registration-form {
+            display: none;
+        }
+
+        .registration-form.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--tg-theme-text-color, #000);
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid var(--tg-theme-hint-color, #e0e0e0);
+            border-radius: 10px;
+            font-size: 16px;
+            background: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000);
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .success-screen {
+            display: none;
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .success-screen.active {
+            display: block;
+        }
+
+        .success-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+            animation: scaleIn 0.5s ease;
+        }
+
+        @keyframes scaleIn {
+            from { transform: scale(0); }
+            to { transform: scale(1); }
+        }
+
+        .ticket-number {
+            font-size: 48px;
+            font-weight: bold;
+            color: #667eea;
+            margin: 20px 0;
+            padding: 20px;
+            background: var(--tg-theme-secondary-bg-color, #f0f0f0);
+            border-radius: 15px;
+            letter-spacing: 3px;
+        }
+
+        .user-info {
+            background: var(--tg-theme-secondary-bg-color, #f0f0f0);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .user-info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--tg-theme-hint-color, #e0e0e0);
+        }
+
+        .user-info-item:last-child {
+            border-bottom: none;
+        }
+
+        .user-info-label {
+            font-weight: 600;
+            color: var(--tg-theme-hint-color, #999);
+        }
+
+        .user-info-value {
+            font-weight: 600;
+            color: var(--tg-theme-text-color, #000);
+        }
+
+        .back-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: var(--tg-theme-secondary-bg-color, #f0f0f0);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 100;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid var(--tg-theme-hint-color, #e0e0e0);
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 4px solid #ffc107;
+        }
+
+        .warning strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        /* Отступ снизу для кнопки */
+        .content-wrapper {
+            padding-bottom: 100px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Главный экран -->
+        <div id="mainScreen" class="content-wrapper">
+            <div class="header">
+                <div class="gift-icon">🎁</div>
+                <h1>РОЗЫГРЫШ от Seruleb</h1>
+                <p>Примите участие и выиграйте приз!</p>
+            </div>
+
+            <div class="info-card">
+                <h2>📋 Как принять участие</h2>
+                <ol class="steps">
+                    <li>Нажмите кнопку "Участвовать в розыгрыше"</li>
+                    <li>Заполните регистрационную форму</li>
+                    <li>Получите свой номер участника</li>
+                    <li>Поставьте видео + текст в статус WhatsApp</li>
+                    <li>Ждите результатов розыгрыша!</li>
+                </ol>
+            </div>
+
+            <div class="warning">
+                <strong>⚠️ Важно!</strong>
+                Без публикации в статусе WhatsApp участие не засчитывается!
+            </div>
+
+            <div class="info-card">
+                <h2>💎 О розыгрыше</h2>
+                <p>🎯 Участвуют все, кто выполнил условия</p>
+                <p>🔥 Победитель выбирается случайным образом</p>
+                <p>📱 Результаты будут объявлены в канале</p>
+                <p>🎉 Не упустите свой шанс!</p>
+            </div>
+        </div>
+
+        <!-- Форма регистрации -->
+        <div id="registrationScreen" class="registration-form content-wrapper">
+            <button class="back-button" onclick="showMainScreen()">←</button>
+            
+            <div class="header">
+                <div class="gift-icon">✍️</div>
+                <h1>Регистрация</h1>
+                <p>Заполните все поля</p>
+            </div>
+
+            <div class="info-card">
+                <form id="registrationForm">
+                    <div class="form-group">
+                        <label for="name">👤 Ваше имя</label>
+                        <input type="text" id="name" placeholder="Введите ваше имя" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="city">🏙 Населённый пункт</label>
+                        <input type="text" id="city" placeholder="Город или село" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="phone">📱 Номер телефона</label>
+                        <input type="tel" id="phone" placeholder="+7 (999) 123-45-67" required>
+                    </div>
+                </form>
+            </div>
+
+            <div class="warning">
+                <strong>📸 Следующий шаг:</strong>
+                После регистрации вы получите видео и текст для статуса WhatsApp
+            </div>
+        </div>
+
+        <!-- Экран загрузки -->
+        <div id="loadingScreen" class="loading">
+            <div class="spinner"></div>
+            <p>Обработка данных...</p>
+        </div>
+
+        <!-- Экран успеха -->
+        <div id="successScreen" class="success-screen content-wrapper">
+            <div class="success-icon">🎉</div>
+            <h2 style="font-size: 24px; margin-bottom: 10px;">Поздравляем!</h2>
+            <p style="margin-bottom: 20px;">Вы успешно зарегистрировались</p>
+            
+            <div class="info-card">
+                <h2>🎟 Ваш номер участника</h2>
+                <div class="ticket-number" id="ticketNumber">-</div>
+            </div>
+
+            <div class="user-info">
+                <div class="user-info-item">
+                    <span class="user-info-label">Имя:</span>
+                    <span class="user-info-value" id="userName">-</span>
+                </div>
+                <div class="user-info-item">
+                    <span class="user-info-label">Город:</span>
+                    <span class="user-info-value" id="userCity">-</span>
+                </div>
+                <div class="user-info-item">
+                    <span class="user-info-label">Телефон:</span>
+                    <span class="user-info-value" id="userPhone">-</span>
+                </div>
+                <div class="user-info-item">
+                    <span class="user-info-label">Время:</span>
+                    <span class="user-info-value" id="regTime">-</span>
+                </div>
+            </div>
+
+            <div class="warning">
+                <strong>📝 Важно:</strong>
+                Через 12 часов нужно снова поставить видео + текст в статус WhatsApp. Скриншоты НЕ удаляйте!
+            </div>
+
+            <div class="info-card">
+                <h2>✅ Что дальше?</h2>
+                <p>1️⃣ Бот отправит вам видео и текст</p>
+                <p>2️⃣ Поставьте их в статус WhatsApp</p>
+                <p>3️⃣ Сделайте скриншот статуса</p>
+                <p>4️⃣ Нажмите кнопку подтверждения в боте</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Кнопка действия (фиксированная) -->
+    <div class="button-container">
+        <button class="join-button" id="actionButton" onclick="handleAction()">
+            🎯 Участвовать в розыгрыше
+        </button>
+    </div>
+
+    <script>
+        // Инициализация Telegram Web App
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.enableClosingConfirmation();
+
+        // Применяем тему Telegram
+        document.body.style.background = tg.themeParams.bg_color || '#ffffff';
+
+        // Получаем данные пользователя Telegram
+        const user = tg.initDataUnsafe?.user || {};
+        const userId = user.id;
+        const username = user.username || 'нет';
+        const firstName = user.first_name || '';
+        const lastName = user.last_name || '';
+
+        let currentScreen = 'main';
+
+        // Показываем главный экран
+        function showMainScreen() {
+            document.getElementById('mainScreen').style.display = 'block';
+            document.getElementById('registrationScreen').classList.remove('active');
+            document.getElementById('successScreen').classList.remove('active');
+            document.getElementById('actionButton').textContent = '🎯 Участвовать в розыгрыше';
+            currentScreen = 'main';
+        }
+
+        // Показываем форму регистрации
+        function showRegistrationForm() {
+            document.getElementById('mainScreen').style.display = 'none';
+            document.getElementById('registrationScreen').classList.add('active');
+            document.getElementById('actionButton').textContent = '✅ Завершить регистрацию';
+            currentScreen = 'registration';
+            
+            // Автозаполнение имени из Telegram
+            if (firstName) {
+                document.getElementById('name').value = firstName + (lastName ? ' ' + lastName : '');
+            }
+        }
+
+        // Показываем экран успеха
+        function showSuccessScreen(data) {
+            document.getElementById('mainScreen').style.display = 'none';
+            document.getElementById('registrationScreen').classList.remove('active');
+            document.getElementById('successScreen').classList.add('active');
+            document.getElementById('actionButton').textContent = '✉️ Открыть бота';
+            currentScreen = 'success';
+
+            // Заполняем данные
+            document.getElementById('ticketNumber').textContent = data.number;
+            document.getElementById('userName').textContent = data.name;
+            document.getElementById('userCity').textContent = data.city;
+            document.getElementById('userPhone').textContent = data.phone;
+            document.getElementById('regTime').textContent = data.time;
+        }
+
+        // Показываем загрузку
+        function showLoading(show) {
+            document.getElementById('loadingScreen').classList.toggle('active', show);
+            document.getElementById('actionButton').disabled = show;
+        }
+
+        // Генерация короткого кода
+        function generateShortCode() {
+            const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+            let result = '';
+            for (let i = 0; i < 5; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        }
+
+        // Форматирование номера телефона
+        document.getElementById('phone')?.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 0) {
+                if (value[0] === '7' || value[0] === '8') {
+                    value = '7' + value.substring(1);
+                } else if (value[0] !== '7') {
+                    value = '7' + value;
+                }
+                
+                let formatted = '+7';
+                if (value.length > 1) {
+                    formatted += ' (' + value.substring(1, 4);
+                }
+                if (value.length >= 5) {
+                    formatted += ') ' + value.substring(4, 7);
+                }
+                if (value.length >= 8) {
+                    formatted += '-' + value.substring(7, 9);
+                }
+                if (value.length >= 10) {
+                    formatted += '-' + value.substring(9, 11);
+                }
+                e.target.value = formatted;
+            }
+        });
+
+        // Обработка действий
+        async function handleAction() {
+            if (currentScreen === 'main') {
+                // Переход к регистрации
+                showRegistrationForm();
+            } else if (currentScreen === 'registration') {
+                // Отправка формы
+                await submitRegistration();
+            } else if (currentScreen === 'success') {
+                // Открываем бота
+                tg.close();
+            }
+        }
+
+        // Отправка регистрации
+        async function submitRegistration() {
+            const name = document.getElementById('name').value.trim();
+            const city = document.getElementById('city').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+
+            // Валидация
+            if (!name || name.length < 2) {
+                tg.showAlert('Пожалуйста, введите ваше имя');
+                return;
+            }
+
+            if (!city || city.length < 2) {
+                tg.showAlert('Пожалуйста, введите населённый пункт');
+                return;
+            }
+
+            if (!phone || phone.length < 10) {
+                tg.showAlert('Пожалуйста, введите корректный номер телефона');
+                return;
+            }
+
+            showLoading(true);
+
+            try {
+                // Генерируем номерок
+                const ticketNumber = generateShortCode();
+                const now = new Date();
+                const timeString = now.toLocaleString('ru-RU', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    timeZone: 'Europe/Moscow'
+                });
+
+                // Данные для отправки боту
+                const registrationData = {
+                    user_id: userId,
+                    username: username,
+                    name: name,
+                    city: city,
+                    phone: phone,
+                    number: ticketNumber,
+                    time: timeString,
+                    telegram_first_name: firstName,
+                    telegram_last_name: lastName
+                };
+
+                // Отправляем данные боту через Telegram Web App API
+                tg.sendData(JSON.stringify(registrationData));
+
+                // Показываем экран успеха
+                showSuccessScreen(registrationData);
+
+                // Показываем уведомление
+                tg.showPopup({
+                    title: '🎉 Успешно!',
+                    message: 'Регистрация завершена! Теперь вернитесь в бота для получения материалов.',
+                    buttons: [{type: 'ok'}]
+                });
+
+            } catch (error) {
+                console.error('Ошибка регистрации:', error);
+                tg.showAlert('Произошла ошибка. Попробуйте ещё раз.');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Обработка кнопки "Назад" в Telegram
+        tg.BackButton.onClick(() => {
+            if (currentScreen === 'registration') {
+                showMainScreen();
+            } else if (currentScreen === 'success') {
+                tg.close();
+            }
+        });
+
+        // Показываем кнопку "Назад" когда нужно
+        function updateBackButton() {
+            if (currentScreen === 'registration' || currentScreen === 'success') {
+                tg.BackButton.show();
+            } else {
+                tg.BackButton.hide();
+            }
+        }
+
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Mini App загружено');
+            console.log('User ID:', userId);
+            updateBackButton();
+        });
+
+        // Обновляем кнопку при смене экрана
+        const originalShowMainScreen = showMainScreen;
+        showMainScreen = function() {
+            originalShowMainScreen();
+            updateBackButton();
+        };
+
+        const originalShowRegistrationForm = showRegistrationForm;
+        showRegistrationForm = function() {
+            originalShowRegistrationForm();
+            updateBackButton();
+        };
+
+        const originalShowSuccessScreen = showSuccessScreen;
+        showSuccessScreen = function(data) {
+            originalShowSuccessScreen(data);
+            updateBackButton();
+        };
+    </script>
+</body>
+</html>
